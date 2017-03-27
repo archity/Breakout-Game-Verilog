@@ -29,19 +29,18 @@ module VGA_Sync(
     /*-------------CONSTANTS--------------*/
     //parameters defining the screen.
     localparam HORIZONTAL_DISPLAY = 640;
-    localparam HORIZONTAL_LEFT = 48;
-    localparam HORIZONTAL_RIGHT = 16;
+    localparam HORIZONTAL_LEFT = 16;
+    localparam HORIZONTAL_RIGHT = 48;
     localparam HORIZONTAL_RETRACE = 96;
     
     localparam VERTICAL_DISPLAY = 480;
-    localparam VERTICAL_TOP = 10;
-    localparam VERTICAL_BOTTOM = 33;
+    localparam VERTICAL_TOP = 11;
+    localparam VERTICAL_BOTTOM = 31;
     localparam VERTICAL_RETRACE = 2;
+
+
     /*------------------------------------*/
-    
-    
-    //reg pixelClock;
-    //wire pixelClockNext;
+   
     
     reg[9:0] horizontalCount, verticalCount;
     reg[9:0] horizontalCountNext, verticalCountNext;
@@ -53,10 +52,8 @@ module VGA_Sync(
     ones are updated according to certain condition and are connected
     to the reg ones */
     
-    //wire pixelTick;
     wire verticalEnd, horizontalEnd;
     //indicate the end of horizontal or vertical screen reading.
-    
     
     always@(posedge clock or posedge reset)
     begin
@@ -66,7 +63,6 @@ module VGA_Sync(
             horizontalSync = 0;
             horizontalCount = 0;
             verticalCount = 0;
-            //pixelClock = 0;
         end
         else
         begin
@@ -74,35 +70,28 @@ module VGA_Sync(
             horizontalSync <= horizontalSyncNext;
             verticalCount <= verticalCountNext;
             horizontalCount <= horizontalCountNext;
-            //pixelClock <= pixelClockNext;
         end
     end
     /*-----------------------------------------*/
     /*-----------------------------------------*/
-    /*Converting the 100MHz clock to 50MHz clock
-    assign pixelClockNext = ~pixelClock;
-    assign pixelTick = pixelClock;*/         
-    /*-----------------------------------------*/
     
-    /*-----------------------------------------*/
-    /*-----------------------------------------*/
     /*We need to convert the 100MHz clock to 65MHz
     in order to support the requirement of 60Hz VGA
     monitor to have a resolution of 1024X768 - (Not yet done)
     Right now it is 25MHz.
-    */ 
     
-    /*Down here, pxclk and pclk are used for the 25MHz clock generation.
-    Earlier, pixelClock, pixelClockNext and pixelTick were used for
-    the same. They've been commented.*/
-    reg [2:0] pxclk;
-    always @ (posedge clock)
-    pxclk = pxclk + 1;
-    wire pclk;
-    assign pclk = pxclk[1]; // 25MHz Pixel Clock
-    /*wire arc;
-    Mod4Counter mygate(.clk(clock), .reset(reset), .q(arc));*/
-
+    Edit: the code is now working and the VGA does show up output,
+    but it is happening only at a resolution of 640x480 with
+    pixel frequency of 25MHz. clock25 wire contains the 25MHz clock
+    (24.762, more precisely, generated using Clocking Wizard).
+    */
+    wire clock65;   //65MHz (unused)
+    wire clock40;   //40MHz (unused)
+    wire clock25;   //25MHz
+    
+    CustomClock mygate(.clk_in1(clock), .clk_out1(clock65), .clk_out2(clock40), .clk_out3(clock25)); 
+    //CustomClock module automatically created using Clocking Wizard.
+    
     /*-------------------------------------------*/
     /*-------------------------------------------*/
     //Signals detecting the end of the line/screen
@@ -115,26 +104,26 @@ module VGA_Sync(
     /*-------------------------------------------*/
     /*-------------------------------------------*/
     //always loop for keeping track of horizontal scanning
-    always@(*)
+    always@(posedge clock25)
     begin
-        if(pclk)   //25Mhz custom clock
+        //if(posedge clock65)
         begin
             if(horizontalEnd)
             horizontalCountNext = 0;
             else
             horizontalCountNext = horizontalCount + 1;
         end
-        else
-        horizontalCountNext = horizontalCount;//essentialy changes nothing.
+        //else
+        //horizontalCountNext = horizontalCount;//essentialy changes nothing.
     end
     /*-------------------------------------------*/
     
     /*-------------------------------------------*/
     /*-------------------------------------------*/
     //always loop for keeping track of vertical scanning
-    always@(*)
+    always@(posedge clock25)    //25Mhz custom clock with the completetion of one horizontal line scanning.
     begin
-        if(pclk && horizontalEnd)   //25Mhz custom clock with the completetion of one horizontal line scanning.
+        if(horizontalEnd)   
         begin
             if(verticalEnd)
             verticalCountNext = 0;
@@ -151,7 +140,8 @@ module VGA_Sync(
     
     
     /*-------------------------------------------*/
-    /* connect the outputs of this module with the local variables*/
+    /*connecting the outputs of this module with its local variables*/
+    
     assign videoON = (verticalCount <= VERTICAL_DISPLAY && horizontalCount <= HORIZONTAL_DISPLAY);
     //as long as the scanning is in the intended area (640X480), keep the display ON
     
@@ -159,6 +149,6 @@ module VGA_Sync(
     assign vSync = verticalSync;
     assign pixelX = horizontalCount;
     assign pixelY = verticalCount;
-    assign pTick = pclk;   
+    assign pTick = clock25;
     
 endmodule
