@@ -16,64 +16,90 @@
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 
 
 module VGA_Ball(
     input clock, reset,
-    output hSync, vSync,
+    input pixelX, pixelY,    
+    output squareBall
     
-    //4 bit color signals
-    output[3:0] vgaRed,
-    output[3:0] vgaGreen,
-    output[3:0] vgaBlue
     //output circleSignal
     );
     
-    wire videoON;
-    reg [9:0] pixelX, pixelY;
-    wire clock25;   //25MHz clock from VGA_Sync
-    wire[3:0] red, green, blue;
+    wire[9:0] pixelX, pixelY;
+    wire sixtyhzTick;
+    localparam SPEED_POS = 1;
+    localparam SPEED_NEG = -1;
     
-    reg[3:0] redWire, greenWire, blueWire;
-    VGA_Sync syncGate(.clock(clock), .reset(reset), .hSync(hSync), .vSync(vSync),
-    .videoON(videoON), .pTick(clock25), .pixelX(pixelX), .pixelY(pixelY));
-
-    //integer x = pixelX;
-    //integer r=50, x=100, y=100;
-    //integer distance;
-    wire circle;
-    reg [9:0] x = 10'b0001100100;   //x coordinate of centre (100)
-    reg [9:0] y = 10'b0001100100;   //y coordinate of centre (100)
-    reg [9:0] r = 10'b0000110010;   //radius (10)
     
-    assign circle = ( ((x-pixelX)^2 + (y-pixelY)^2) <= r^2 );
-    /* Using the distance formulae for calculating the distance between the centre
-    and scanning cursor's current coordinates. If it lies within the intended region
-    (the circle), circle wire would be set to high. */
+    /*---------------------------------------*/
+    /* Ball variables */
+    reg [9:0] ballRegX, ballRegY;
+    wire [9:0] ballWireX, ballWireY;
     
-    always@(posedge clock)
+    wire[9:0] left, right, top, bottom;//These are kinda coordinates of the square ball.
+    
+    /*---------------------------------------*/
+    reg[9:0] incrementRegX, incrementRegY;
+    wire[9:0] incrementWireX, incrementWireY;
+    /* Change in x or y coordiates. Value determines the speed. Sign determines the
+    direction. */
+    /*---------------------------------------*/
+    
+    
+    /*---------------------------------------*/
+    
+    /*---------------------------------------*/
+    always@(posedge clock or posedge reset)
     begin
-        if(circle)
+        if(reset)
         begin
-            redWire <= 4'b1111;
-            greenWire <= 4'b0000;
-            blueWire <= 4'b0000;
-            //Red color for circle
+            ballRegX <= 0;
+            ballRegY <= 0;
+            
         end
         else
         begin
-            redWire <= 4'b0000;
-            greenWire <= 4'b0000;
-            blueWire <= 4'b0000;
+            ballRegX <= ballWireX;
+            ballRegY <= ballWireY;
+            incrementRegX <= incrementWireX;
+            incrementRegY <= incrementWireY;
         end
-    end
-
-    assign vgaRed = (videoON)? redWire: 0;
-    assign vgaGreen = (videoON)? greenWire: 0;
-    assign vgaBlue = (videoON)? blueWire: 0;
+    end 
     
-    //assign circleSignal = circle;
+    /*---------------------------------------*/
+    assign sixtyHzTick = (pixelY==480) && (pixelX==0);
+    /* Scanning had reached the end of screen...To get the refresh rate of 60Hz. */
+    /*---------------------------------------*/
+    
+    assign left = ballRegX;
+    assign right = left + 10 - 1;   //10 is the size of the ball;
+    assign top = ballRegY;
+    assign bottom = top + 10 - 1;
+    
+    wire ballWire;   //will hold the signal for when the ball is to be displayed.
+    
+    assign ballWire = ( (pixelX >= left) && (pixelX <=right) && (pixelY >= top) && (pixelY <= bottom) );
+    
+    assign ballWireX = (sixtyHzTick)? (ballRegX + incrementRegX) : (ballRegX);
+    assign ballWireY = (sixtyHzTick)? (ballRegY + incrementRegY) : (ballRegY);
+    
+    always@(*)
+    begin
+        incrementRegX <= incrementWireX;
+        incrementRegY <= incrementWireY;
+        
+        if(left<=2)
+        incrementRegX <= SPEED_POS;
+        else if(right>=630)
+        incrementRegX <= SPEED_NEG;
+        else if(top<=2)
+        incrementRegY <= SPEED_POS;
+        else if(bottom>=470)
+        incrementRegY <=SPEED_NEG;
+        
+    end
     
 endmodule
