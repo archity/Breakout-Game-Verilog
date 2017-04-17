@@ -22,14 +22,14 @@
 
 module VGA_Ball(
     input clock, reset,
-    input pixelX, pixelY,    
-    output squareBall
+    input[9:0] pixelX, pixelY,    
+    output ballWire
     
     //output circleSignal
     );
     
-    wire[9:0] pixelX, pixelY;
-    wire sixtyhzTick;
+    
+    wire sixtyHzTick;
     localparam SPEED_POS = 1;
     localparam SPEED_NEG = -1;
     
@@ -43,7 +43,7 @@ module VGA_Ball(
     
     /*---------------------------------------*/
     reg[9:0] incrementRegX, incrementRegY;
-    wire[9:0] incrementWireX, incrementWireY;
+    reg[9:0] incrementWireX, incrementWireY;
     /* Change in x or y coordiates. Value determines the speed. Sign determines the
     direction. */
     /*---------------------------------------*/
@@ -58,7 +58,8 @@ module VGA_Ball(
         begin
             ballRegX <= 0;
             ballRegY <= 0;
-            
+            incrementRegX<=10'h004;
+            incrementRegY<=10'h004;
         end
         else
         begin
@@ -70,7 +71,7 @@ module VGA_Ball(
     end 
     
     /*---------------------------------------*/
-    assign sixtyHzTick = (pixelY==480) && (pixelX==0);
+    assign sixtyHzTick = (pixelY==481) && (pixelX==0);
     /* Scanning had reached the end of screen...To get the refresh rate of 60Hz. */
     /*---------------------------------------*/
     
@@ -79,27 +80,29 @@ module VGA_Ball(
     assign top = ballRegY;
     assign bottom = top + 10 - 1;
     
-    wire ballWire;   //will hold the signal for when the ball is to be displayed.
+    wire ball;   //will hold the signal for when the ball is to be displayed.
     
-    assign ballWire = ( (pixelX >= left) && (pixelX <=right) && (pixelY >= top) && (pixelY <= bottom) );
+    assign ball = ( (pixelX >= left) && (pixelX <=right) && (pixelY >= top) && (pixelY <= bottom) );
     
     assign ballWireX = (sixtyHzTick)? (ballRegX + incrementRegX) : (ballRegX);
     assign ballWireY = (sixtyHzTick)? (ballRegY + incrementRegY) : (ballRegY);
     
     always@(*)
     begin
-        incrementRegX <= incrementWireX;
-        incrementRegY <= incrementWireY;
+        incrementWireX <= incrementRegX;
+        incrementWireY <= incrementRegY;
         
-        if(left<=2)
-        incrementRegX <= SPEED_POS;
+        if(left<=32)
+        incrementWireX <= SPEED_POS;
         else if(right>=630)
-        incrementRegX <= SPEED_NEG;
-        else if(top<=2)
-        incrementRegY <= SPEED_POS;
+        incrementWireX <= SPEED_NEG;
+        else if(top<=22)
+        incrementWireY <= SPEED_POS;
         else if(bottom>=470)
-        incrementRegY <=SPEED_NEG;
+        incrementWireY <=SPEED_NEG;
         
     end
+    
+    assign ballWire = ball;
     
 endmodule
