@@ -30,13 +30,13 @@ module VGA_Paddle(
     input btnR,
     /* The left and right button of Nexys */
     
-    output barWire
+    output wire barWire
     );
     
-    localparam BAR_TOP = 470; //(top bundary)
-    localparam BAR_BOTTOM = 475; //(bottom boundary)
+    localparam BAR_TOP = 460; //(top bundary)
+    localparam BAR_BOTTOM = 465; //(bottom boundary)
     localparam BAR_SIZE = 64; //(Paddle Size)
-    localparam BAR_STEP = 4; //Bar moving velocity when the button is pressed
+    localparam BAR_STEP = 1; //Bar moving velocity when the button is pressed
     localparam MAX_X = 640;
     localparam MAX_Y = 480;
 
@@ -51,7 +51,7 @@ module VGA_Paddle(
     begin
         if(reset)
         begin
-            barRegX <= 0;
+            barRegX <= 10'b0000000000;
         end
         else
         begin
@@ -68,26 +68,29 @@ module VGA_Paddle(
     wire[9:0] leftWireBar, rightWireBar;
     
     assign leftWireBar = barRegX;
-    assign rightWireBar = barRegX + BAR_SIZE -1;
+    assign rightWireBar = barRegX + BAR_SIZE;
     
-    wire barWire;   //wheather scanning cursor is within the bar area or not.
+    //wire barWire;   //wheather scanning cursor is within the bar area or not.
     
     assign barWire = (pixelX>=leftWireBar && pixelX<=rightWireBar && pixelY>=BAR_TOP && pixelY<=BAR_BOTTOM);
     
+    //assign barWireX = (sixtyHzTick && btnL && leftWireBar>(0))? (barRegX - BAR_STEP):(barRegX);
+    //assign barWireX = (sixtyHzTick && btnR && rightWireBar<(MAX_X - BAR_STEP))? (barRegX + BAR_STEP):(barRegX);
     always@(*)
     begin
+        //barWireX = barRegX;
         if(sixtyHzTick)
         begin
-            if(~btnL && (leftWireBar>(0+BAR_STEP)))
+            if(btnL & (leftWireBar > (0)))
             begin
                 barWireX <= barRegX - BAR_STEP; 
             end
-            else if(~btnR && (rightWireBar < (MAX_X - BAR_STEP)))
+            else if(btnR & (rightWireBar < (MAX_X - BAR_STEP)))
             begin
                 barWireX <= barRegX + BAR_STEP;
             end
+            else barWireX <= barRegX;//No button pressed, drive the current value to the wire again.
         end
-        else barWireX = barRegX; 
         
     end 
     
