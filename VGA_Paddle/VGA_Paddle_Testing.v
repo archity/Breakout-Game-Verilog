@@ -28,7 +28,9 @@ module VGA_Paddle_Testing(
     //4 bit color signals
     output[3:0] vgaRed,
     output[3:0] vgaGreen,
-    output[3:0] vgaBlue
+    output[3:0] vgaBlue,
+    
+    input btnL, btnR
     );
     
     wire videoON;
@@ -42,7 +44,7 @@ module VGA_Paddle_Testing(
     VGA_Sync syncGate(.clock(clock), .reset(reset), .hSync(hSync), .vSync(vSync),
     .videoON(videoON), .pTick(clock25), .pixelX(pixelX), .pixelY(pixelY));
     
-    VGA_Paddle paddleGate(.clock(clock), .reset(reset), .pixelX(pixelX), .pixelY(pixelY), .barWire(barWire));
+    VGA_Paddle paddleGate(.clock(clock), .reset(reset), .pixelX(pixelX), .pixelY(pixelY), .barWire(barWire), .btnL(btnL), .btnR(btnR));
      
     always@(posedge clock)
     begin
