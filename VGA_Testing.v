@@ -33,9 +33,11 @@ module VGA_Testing(
     );
     
     wire videoON;
-    //reg[3:0] rgbWire;
+    reg videoON_reg;
+    
     reg[3:0] redWire, greenWire, blueWire;
     VGA_Sync mygate(.clock(clock), .reset(reset), .hSync(hSync), .vSync(vSync), .videoON(videoON), .pTick(), .pixelX(), .pixelY());
+    //assign videoON_reg = videoON;
     always@(posedge clock or posedge reset)
     begin
         if(reset)
@@ -46,16 +48,18 @@ module VGA_Testing(
         end
         else
         begin
-            redWire <= 3'b111;
-            greenWire <= 3'b111;
-            blueWire <= 3'b111;
+            redWire <= 4'b0000;
+            greenWire <= 4'b1111;
+            blueWire <= 4'b0000;
         end
     end
     
-    //assign RGB = (videoON)? rgbWire: 0;
     assign vgaRed = (videoON)? redWire: 0;
     assign vgaGreen = (videoON)? greenWire: 0;
     assign vgaBlue = (videoON)? blueWire: 0;
+    /*assign vgaRed = redWire;
+    assign vgaGreen = greenWire;
+    assign vgaBlue = blueWire;*/
     
     
 endmodule
